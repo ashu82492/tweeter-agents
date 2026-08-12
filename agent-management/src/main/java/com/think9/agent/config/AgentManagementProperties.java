@@ -17,6 +17,8 @@ public class AgentManagementProperties {
     private String apiBaseUrl = "http://localhost:8080/api/v1";
     @NotBlank
     private String credentialEncryptionKey;
+    @NotBlank
+    private String agentPassword;
     @Valid
     private final Kafka kafka = new Kafka();
     @Valid
@@ -48,6 +50,14 @@ public class AgentManagementProperties {
 
     public void setCredentialEncryptionKey(String credentialEncryptionKey) {
         this.credentialEncryptionKey = credentialEncryptionKey;
+    }
+
+    public String getAgentPassword() {
+        return agentPassword;
+    }
+
+    public void setAgentPassword(String agentPassword) {
+        this.agentPassword = agentPassword;
     }
 
     public Kafka getKafka() {

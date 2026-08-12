@@ -1,11 +1,12 @@
 package com.think9.app.metrics;
 
+import java.util.List;
+
 public record MetricsSnapshot(
         long agents,
         long activeAgents,
-        long tweetsPerMinute,
-        long dmsPerMinute,
         long errors,
-        String health
+        String health,
+        List<MetricPoint> points
 ) {
 }

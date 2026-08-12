@@ -6,9 +6,6 @@ import com.think9.agent.profile.AgentProfile;
 import com.think9.agent.profile.AgentProfileRepository;
 import com.think9.agent.profile.AgentTokenService;
 import com.think9.agent.profile.CredentialCipher;
-import java.nio.charset.StandardCharsets;
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
 import java.time.Clock;
 import java.util.ArrayList;
@@ -69,7 +66,7 @@ public class AgentBootstrapService {
     private AgentProfile createProfile(int ordinal, String username) {
         AgentManagementProperties.Personality personality = properties.getPersonalities()
                 .get((ordinal - 1) % properties.getPersonalities().size());
-        String password = generatedPassword(username);
+        String password = properties.getAgentPassword();
         Think9ApiClient.BackendUser user = apiClient.register(new Think9ApiClient.Registration(username, password,
                 "Agent " + ordinal));
         AgentProfile profile = new AgentProfile(UUID.randomUUID(), user.id(), username, user.displayName(),
@@ -97,17 +94,4 @@ public class AgentBootstrapService {
         return targets;
     }
 
-    private String generatedPassword(String username) {
-        try {
-            byte[] input = (username + ":" + properties.getCredentialEncryptionKey()).getBytes(StandardCharsets.UTF_8);
-            byte[] digest = MessageDigest.getInstance("SHA-256").digest(input);
-            StringBuilder password = new StringBuilder("Ag-");
-            for (int index = 0; index < 16; index++) {
-                password.append(String.format("%02x", digest[index]));
-            }
-            return password.toString();
-        } catch (NoSuchAlgorithmException exception) {
-            throw new IllegalStateException("SHA-256 is unavailable", exception);
-        }
-    }
 }

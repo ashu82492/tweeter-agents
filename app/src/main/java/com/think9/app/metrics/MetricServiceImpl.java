@@ -5,6 +5,8 @@ import com.think9.identity.repository.UserRepository;
 import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.LongAdder;
 import org.springframework.boot.actuate.health.HealthEndpoint;
@@ -47,27 +49,32 @@ public class MetricServiceImpl implements MetricService {
         return new MetricsSnapshot(
                 userRepository.countByType(UserType.SYSTEM_AGENT),
                 userRepository.countByTypeAndLastActiveAtAfter(UserType.SYSTEM_AGENT, now.minus(Duration.ofMinutes(10))),
-                rate(tweetBuckets, now),
-                rate(directMessageBuckets, now),
                 errors.sum(),
-                healthEndpoint.health().getStatus().getCode());
+                healthEndpoint.health().getStatus().getCode(),
+                points(now));
     }
 
     private void record(ConcurrentHashMap<Long, LongAdder> buckets, Instant occurredAt) {
         buckets.computeIfAbsent(occurredAt.getEpochSecond() / 60, ignored -> new LongAdder()).increment();
     }
 
-    private long rate(ConcurrentHashMap<Long, LongAdder> buckets, Instant now) {
+    private List<MetricPoint> points(Instant now) {
         long currentMinute = now.getEpochSecond() / 60;
         long oldestMinute = currentMinute - ROLLING_WINDOW_MINUTES + 1;
-        buckets.keySet().removeIf(minute -> minute < oldestMinute);
-        long count = 0;
+        tweetBuckets.keySet().removeIf(minute -> minute < oldestMinute);
+        directMessageBuckets.keySet().removeIf(minute -> minute < oldestMinute);
+        List<MetricPoint> points = new ArrayList<>((int) ROLLING_WINDOW_MINUTES);
         for (long minute = oldestMinute; minute <= currentMinute; minute++) {
-            LongAdder bucket = buckets.get(minute);
-            if (bucket != null) {
-                count += bucket.sum();
-            }
+            points.add(new MetricPoint(
+                    Instant.ofEpochSecond(minute * 60),
+                    count(tweetBuckets, minute),
+                    count(directMessageBuckets, minute)));
         }
-        return Math.round((double) count / ROLLING_WINDOW_MINUTES);
+        return points;
+    }
+
+    private long count(ConcurrentHashMap<Long, LongAdder> buckets, long minute) {
+        LongAdder bucket = buckets.get(minute);
+        return bucket == null ? 0 : bucket.sum();
     }
 }

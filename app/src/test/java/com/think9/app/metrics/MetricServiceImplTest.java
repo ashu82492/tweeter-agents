@@ -32,7 +32,7 @@ class MetricServiceImplTest {
     }
 
     @Test
-    void snapshot_returnsTrailingHourRatesAndCurrentServiceState() {
+    void snapshot_returnsSixtyMinuteSeriesAndCurrentServiceState() {
         for (int event = 0; event < 30; event++) {
             metricService.recordTweet(now);
         }
@@ -43,9 +43,12 @@ class MetricServiceImplTest {
 
         assertEquals(100, snapshot.agents());
         assertEquals(97, snapshot.activeAgents());
-        assertEquals(1, snapshot.tweetsPerMinute());
-        assertEquals(0, snapshot.dmsPerMinute());
         assertEquals(1, snapshot.errors());
         assertEquals("UP", snapshot.health());
+        assertEquals(60, snapshot.points().size());
+        assertEquals(now.minusSeconds(59 * 60), snapshot.points().get(0).timestamp());
+        assertEquals(now, snapshot.points().get(59).timestamp());
+        assertEquals(30, snapshot.points().get(59).tweetsPerMinute());
+        assertEquals(0, snapshot.points().get(59).dmsPerMinute());
     }
 }
