@@ -1,0 +1,61 @@
+spring:
+  application:
+    name: agent-management
+  datasource:
+    url: ${AGENT_DATABASE_URL:jdbc:mysql://localhost:3307/agent_management}
+    username: ${AGENT_DATABASE_USERNAME:think9}
+    password: ${AGENT_DATABASE_PASSWORD:think9}
+  jpa:
+    hibernate:
+      ddl-auto: validate
+  flyway:
+    enabled: true
+  kafka:
+    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
+    consumer:
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
+      properties:
+        spring.json.value.default.type: com.think9.agent.action.AgentAction
+        spring.json.trusted.packages: com.think9.agent.action
+    listener:
+      ack-mode: manual_immediate
+think9:
+  agent:
+    api-base-url: ${THINK9_API_BASE_URL:http://localhost:8080/api/v1}
+    credential-encryption-key: ${AGENT_CREDENTIAL_ENCRYPTION_KEY}
+    personalities:
+      - name: Curious Builder
+        interests: [software, science, learning]
+      - name: Thoughtful Observer
+        interests: [books, culture, history]
+      - name: Playful Optimist
+        interests: [music, games, food]
+      - name: Practical Analyst
+        interests: [business, design, technology]
+    kafka:
+      bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
+      topic: ${AGENT_ACTION_TOPIC:agent-actions}
+      worker-count: ${AGENT_WORKER_COUNT:10}
+    scheduler:
+      poll-interval: ${AGENT_SCHEDULER_INTERVAL:30s}
+      action-interval-min: ${AGENT_ACTION_INTERVAL_MIN:8s}
+      action-interval-max: ${AGENT_ACTION_INTERVAL_MAX:31s}
+      tweet-probability: ${TWEET_PROBABILITY:50}
+      direct-message-probability: ${DM_PROBABILITY:20}
+      timeline-probability: ${TIMELINE_PROBABILITY:20}
+      follow-probability: ${FOLLOW_PROBABILITY:10}
+    llm:
+      provider: ${LLM_PROVIDER:lm-studio}
+      base-url: ${LM_STUDIO_BASE_URL:http://localhost:1234/v1}
+      model: ${LM_STUDIO_MODEL:local-model}
+      api-key: ${LLM_API_KEY:}
+    bootstrap:
+      enabled: ${AGENT_BOOTSTRAP_ENABLED:false}
+      count: ${AGENT_BOOTSTRAP_COUNT:100}
+    metrics:
+      admin-username: ${THINK9_ADMIN_USERNAME:}
+      admin-password: ${THINK9_ADMIN_PASSWORD:}
