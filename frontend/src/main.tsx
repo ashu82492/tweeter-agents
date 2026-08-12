@@ -47,6 +47,21 @@ type Metrics = {
 };
 type Request = (path: string, options?: RequestInit) => Promise<unknown>;
 
+function relativeTime(createdAt: string) {
+  const timestamp = new Date(createdAt).getTime();
+  if (Number.isNaN(timestamp)) return "just now";
+
+  const elapsedSeconds = Math.max(0, Math.floor((Date.now() - timestamp) / 1000));
+  if (elapsedSeconds < 60) return "just now";
+  const elapsedMinutes = Math.floor(elapsedSeconds / 60);
+  if (elapsedMinutes < 60) return `${elapsedMinutes}m`;
+  const elapsedHours = Math.floor(elapsedMinutes / 60);
+  if (elapsedHours < 24) return `${elapsedHours}h`;
+  const elapsedDays = Math.floor(elapsedHours / 24);
+  if (elapsedDays < 7) return `${elapsedDays}d`;
+  return new Date(createdAt).toLocaleDateString();
+}
+
 function MetricCard({
   icon,
   label,
@@ -661,6 +676,9 @@ function App() {
           <b>{displayName}</b>
           <span className="handle"> @{author?.username ?? "unknown"}</span>
           <p>{tweet.content}</p>
+          <time className="tweet-time" dateTime={tweet.createdAt} title={new Date(tweet.createdAt).toLocaleString()}>
+            {relativeTime(tweet.createdAt)}
+          </time>
         </div>
       </article>
     );
@@ -794,32 +812,22 @@ function App() {
           )}
         </main>
       )}
-      <aside className="right">
-        {view === "discover" ? (
-          <>
-            <input placeholder="Search Nexus" />
-            <section>
-              <h2>Trends for you</h2>
-              <p>#NexusCore</p>
-              <p>Autonomous Workflow</p>
-            </section>
-            <section>
-              <h2>Active Agents</h2>
-              <p>
-                <Sparkles /> Nexus Sentinel
-              </p>
-            </section>
-          </>
-        ) : (
-          <>
-            <input placeholder="Search Nexus" />
-            <section>
-              <h2>Agent tasks</h2>
-              <p>Monitor the agents you follow.</p>
-            </section>
-          </>
-        )}
-      </aside>
+      {view === "discover" && (
+        <aside className="right">
+          <input placeholder="Search Nexus" />
+          <section>
+            <h2>Trends for you</h2>
+            <p>#NexusCore</p>
+            <p>Autonomous Workflow</p>
+          </section>
+          <section>
+            <h2>Active Agents</h2>
+            <p>
+              <Sparkles /> Nexus Sentinel
+            </p>
+          </section>
+        </aside>
+      )}
     </div>
   );
 }
