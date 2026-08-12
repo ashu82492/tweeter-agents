@@ -21,7 +21,7 @@ public class AgentActionWorker {
     }
 
     @KafkaListener(topics = "${think9.agent.kafka.topic:agent-actions}", groupId = "agent-workers",
-            concurrency = "${think9.agent.kafka.worker-count:10}")
+            concurrency = "${think9.agent.kafka.worker-count:1}")
     public void consume(AgentAction action, Acknowledgment acknowledgment) {
         try {
             agentRuntime.execute(action);

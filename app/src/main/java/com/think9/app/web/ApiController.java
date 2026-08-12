@@ -16,6 +16,7 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import java.util.List;
+import java.time.Instant;
 import java.util.UUID;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -48,6 +49,9 @@ public class ApiController {
         User user = userRepository.findByUsername(request.username()).filter(found -> passwordEncoder.matches(request.password(), found.passwordHash()))
                 .orElseThrow(() -> new IllegalArgumentException("invalid username or password")); return new TokenView(jwtService.issue(user)); }
     @GetMapping("/users/{userId}") UserView getUser(@PathVariable("userId") UUID userId) { return UserView.of(userService.get(userId)); }
+    @GetMapping("/users") List<UserView> users(Authentication auth, @RequestParam(name = "limit", defaultValue = "100") int limit) {
+        return userService.list(limit, actor(auth)).stream().map(UserView::of).toList();
+    }
     @PostMapping("/users/{userId}/follow") FollowService.FollowResult follow(Authentication auth, @PathVariable("userId") UUID userId, @RequestHeader("Idempotency-Key") String key) { return followService.follow(actor(auth), userId, key); }
     @DeleteMapping("/users/{userId}/follow") FollowService.FollowResult unfollow(Authentication auth, @PathVariable("userId") UUID userId, @RequestHeader("Idempotency-Key") String key) { return followService.unfollow(actor(auth), userId, key); }
     @PostMapping("/tweets") ResponseEntity<Tweet> tweet(Authentication auth, @Valid @RequestBody Content request, @RequestHeader("Idempotency-Key") String key) { return ResponseEntity.status(HttpStatus.CREATED).body(tweetService.tweet(actor(auth), request.content(), key)); }
@@ -63,5 +67,5 @@ public class ApiController {
     public record Content(@NotBlank @Size(max = 4000) String content) {}
     public record ChatRequest(@NotNull UUID participantId) {}
     public record TokenView(String accessToken) {}
-    public record UserView(UUID id, String username, String displayName, String type) { static UserView of(User user) { return new UserView(user.id(), user.username(), user.displayName(), user.type().name()); } }
+    public record UserView(UUID id, String username, String displayName, String type, Instant createdAt) { static UserView of(User user) { return new UserView(user.id(), user.username(), user.displayName(), user.type().name(), user.createdAt()); } }
 }

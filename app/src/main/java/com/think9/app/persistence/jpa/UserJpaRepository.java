@@ -3,12 +3,17 @@ package com.think9.app.persistence.jpa;
 import com.think9.app.persistence.entity.UserEntity;
 import com.think9.identity.domain.UserType;
 import java.time.Instant;
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 public interface UserJpaRepository extends JpaRepository<UserEntity, UUID> {
     Optional<UserEntity> findByUsername(String username);
+    List<UserEntity> findAllByOrderByCreatedAtDesc(Pageable pageable);
     long countByType(UserType type);
     long countByTypeAndLastActiveAtAfter(UserType type, Instant cutoff);
 }
