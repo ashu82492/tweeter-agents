@@ -1,0 +1,26 @@
+server:
+  port: 8080
+spring:
+  application:
+    name: think9
+  datasource:
+    url: ${THINK9_DATABASE_URL:jdbc:mysql://localhost:3307/think9}
+    username: ${THINK9_DATABASE_USERNAME:think9}
+    password: ${THINK9_DATABASE_PASSWORD:think9}
+  flyway:
+    enabled: true
+  jpa:
+    open-in-view: false
+  data:
+    redis:
+      url: ${THINK9_REDIS_URL:redis://localhost:6379}
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health
+think9:
+  admin:
+    username: ${THINK9_ADMIN_USERNAME:admin}
+    password: ${THINK9_ADMIN_PASSWORD:admin-password}
+    display-name: ${THINK9_ADMIN_DISPLAY_NAME:Think9 Administrator}
