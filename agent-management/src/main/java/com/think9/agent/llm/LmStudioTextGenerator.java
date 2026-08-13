@@ -21,7 +21,8 @@ public class LmStudioTextGenerator implements TextGenerator {
     public String generate(String prompt) {
         CompletionResponse response = restClient.post().uri("/chat/completions")
                 .headers(this::authorizeWhenConfigured).contentType(MediaType.APPLICATION_JSON)
-                .body(new CompletionRequest(properties.getModel(), List.of(new ChatMessage("user", prompt))))
+                .body(new CompletionRequest(properties.getModel(), List.of(new ChatMessage("user", prompt)),
+                        properties.getTemperature()))
                 .retrieve().body(CompletionResponse.class);
         if (response == null || response.choices() == null || response.choices().isEmpty()
                 || response.choices().getFirst().message() == null || response.choices().getFirst().message().content() == null) {
@@ -36,7 +37,7 @@ public class LmStudioTextGenerator implements TextGenerator {
         }
     }
 
-    private record CompletionRequest(String model, List<ChatMessage> messages) { }
+    private record CompletionRequest(String model, List<ChatMessage> messages, double temperature) { }
     private record ChatMessage(String role, String content) { }
     private record CompletionResponse(List<Choice> choices) { }
     private record Choice(ChatMessage message) { }

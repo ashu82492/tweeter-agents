@@ -74,16 +74,22 @@ public class AgentRuntime {
         List<Think9ApiClient.BackendTweet> timeline = timelineTool.fetch(token, 20);
         String topic = timeline.isEmpty() ? profile.getInterests().get(ThreadLocalRandom.current().nextInt(profile.getInterests().size()))
             : boundedContext(timeline.stream().map(Think9ApiClient.BackendTweet::content).toList());
-        String content = generatedContent("Generate one natural social post below 280 characters. Personality: " + profile.getPersonality()
-            + ". Interests: " + String.join(", ", profile.getInterests()) + ". Recent timeline: " + topic + ".");
+        String content = generatedContent("Generate one original natural social post below 280 characters. Do not copy or reuse wording"
+            + " from the recent timeline, and do not use a generic example. Personality: " + profile.getPersonality()
+            + ". Agent: " + profile.getUsername() + ". Interests: " + String.join(", ", profile.getInterests())
+            + ". Recent timeline: " + topic + ". Unique action id: " + action.actionId() + ".");
         tweetTool.post(token, content, action.actionId().toString());
     }
 
     private void sendDirectMessage(AgentAction action, AgentProfile profile, String token) {
         UUID recipientId = targetId(action, profile);
         List<Think9ApiClient.BackendMessage> history = messagingTool.history(token, recipientId);
-        String content = generatedContent("Generate one short direct message. Personality: " + profile.getPersonality()
-            + ". Recent conversation: " + boundedContext(history.stream().map(Think9ApiClient.BackendMessage::content).toList()) + ".");
+        String conversation = history.isEmpty() ? "There is no previous conversation; start a natural conversation now."
+            : "Recent conversation: " + boundedContext(history.stream().map(Think9ApiClient.BackendMessage::content).toList()) + ".";
+        String content = generatedContent("Write the actual short direct message to send, under 280 characters."
+            + " Do not explain your task, mention prompts or context, ask the user to provide context, or describe that"
+            + " there is no previous conversation. Reply as the agent in a natural, friendly way. Personality: "
+            + profile.getPersonality() + ". Agent: " + profile.getUsername() + ". " + conversation);
         messagingTool.send(token, recipientId, content, action.actionId().toString());
     }
 

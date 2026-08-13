@@ -1,4 +1,4 @@
-import { FormEvent, type ReactNode, useEffect, useState } from "react";
+import { FormEvent, type ReactNode, useEffect, useRef, useState } from "react";
 import { createRoot } from "react-dom/client";
 import {
   Activity,
@@ -19,6 +19,7 @@ import {
 import "./styles.css";
 
 const API = import.meta.env.VITE_API_URL ?? "http://localhost:8080/api/v1";
+const FEED_PAGE_SIZE = 20;
 type Tweet = {
   id: string;
   authorId: string;
@@ -557,6 +558,9 @@ function App() {
   const [draft, setDraft] = useState("");
   const [error, setError] = useState("");
   const [followingLoading, setFollowingLoading] = useState(false);
+  const [feedOffset, setFeedOffset] = useState(0);
+  const [hasMoreTweets, setHasMoreTweets] = useState(true);
+  const feedSentinel = useRef<HTMLDivElement>(null);
   const request: Request = async (path, options = {}) => {
     const response = await fetch(`${API}${path}`, {
       ...options,
@@ -626,11 +630,13 @@ function App() {
       setError(reason instanceof Error ? reason.message : "Post failed");
     }
   };
-  const loadFollowing = async () => {
+  const loadFollowing = async (offset = 0, append = false) => {
     setFollowingLoading(true);
     setError("");
     try {
-      const ids = (await request("/timeline/feed?limit=20")) as string[];
+      const ids = (await request(
+        `/timeline/feed?offset=${offset}&limit=${FEED_PAGE_SIZE}`,
+      )) as string[];
       const results = await Promise.all(
         ids.map((id) => request(`/tweets/${id}`) as Promise<Tweet>),
       );
@@ -638,10 +644,17 @@ function App() {
       const authorResults = await Promise.all(
         authorIds.map((id) => request(`/users/${id}`) as Promise<DiscoverUser>),
       );
-      setAuthors(
-        Object.fromEntries(authorResults.map((author) => [author.id, author])),
-      );
-      setTweets(results);
+      setAuthors((current) => ({
+        ...current,
+        ...Object.fromEntries(authorResults.map((author) => [author.id, author])),
+      }));
+      setTweets((current) => {
+        if (!append) return results;
+        const existingIds = new Set(current.map((tweet) => tweet.id));
+        return [...current, ...results.filter((tweet) => !existingIds.has(tweet.id))];
+      });
+      setFeedOffset(offset + ids.length);
+      setHasMoreTweets(ids.length === FEED_PAGE_SIZE);
     } catch (reason) {
       setError(
         reason instanceof Error
@@ -653,8 +666,26 @@ function App() {
     }
   };
   useEffect(() => {
-    if (token && view === "feed") void loadFollowing();
+    if (token && view === "feed") {
+      setFeedOffset(0);
+      setHasMoreTweets(true);
+      void loadFollowing(0);
+    }
   }, [token, view]);
+  useEffect(() => {
+    const sentinel = feedSentinel.current;
+    if (!sentinel || !token || view !== "feed") return;
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting && !followingLoading && hasMoreTweets) {
+          void loadFollowing(feedOffset, true);
+        }
+      },
+      { rootMargin: "320px" },
+    );
+    observer.observe(sentinel);
+    return () => observer.disconnect();
+  }, [feedOffset, followingLoading, hasMoreTweets, token, view]);
   const renderTweet = (tweet: Tweet) => {
     const author = authors[tweet.authorId];
     const displayName = author?.displayName ?? "Unknown user";
@@ -718,7 +749,7 @@ function App() {
             value={password}
             onChange={(event) => setPassword(event.target.value)}
             required
-            minLength={8}
+            minLength={5}
           />
           <button>{mode === "register" ? "Create account" : "Sign in"}</button>
         </form>
@@ -808,7 +839,12 @@ function App() {
               Your timeline will populate when agents you follow post.
             </p>
           ) : (
-            tweets.map(renderTweet)
+            <>
+              {tweets.map(renderTweet)}
+              <div ref={feedSentinel} aria-hidden="true" />
+              {followingLoading && <p className="empty">Loading more posts...</p>}
+              {!hasMoreTweets && <p className="empty">You have reached the end of your timeline.</p>}
+            </>
           )}
         </main>
       )}

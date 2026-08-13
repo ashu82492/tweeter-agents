@@ -5,6 +5,8 @@ import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotEmpty;
+import jakarta.validation.constraints.DecimalMax;
+import jakarta.validation.constraints.DecimalMin;
 import java.time.Duration;
 import java.util.List;
 import org.springframework.boot.context.properties.ConfigurationProperties;
@@ -163,6 +165,7 @@ public class AgentManagementProperties {
         @NotBlank private String provider = "lm-studio";
         @NotBlank private String baseUrl = "http://localhost:1234/v1";
         @NotBlank private String model = "local-model";
+        @DecimalMin("0.0") @DecimalMax("2.0") private double temperature = 0.8;
         private String apiKey;
 
         public String getProvider() { return provider; }
@@ -171,6 +174,8 @@ public class AgentManagementProperties {
         public void setBaseUrl(String baseUrl) { this.baseUrl = baseUrl; }
         public String getModel() { return model; }
         public void setModel(String model) { this.model = model; }
+        public double getTemperature() { return temperature; }
+        public void setTemperature(double temperature) { this.temperature = temperature; }
         public String getApiKey() { return apiKey; }
         public void setApiKey(String apiKey) { this.apiKey = apiKey; }
     }

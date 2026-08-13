@@ -7,7 +7,7 @@ import java.util.List;
 import java.util.UUID;
 
 public interface TimelineService {
-    List<UUID> fetchFeed(UUID userId, int limit);
+    List<UUID> fetchFeed(UUID userId, int offset, int limit);
     void onTweetPublished(TweetPublished event);
     void onFollowCreated(FollowCreated event);
     void onFollowRemoved(FollowRemoved event);

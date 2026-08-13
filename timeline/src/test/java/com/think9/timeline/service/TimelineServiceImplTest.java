@@ -36,4 +36,15 @@ class TimelineServiceImplTest {
         verify(timelineRepository).add(firstFollower, tweetId, occurredAt.toEpochMilli());
         verify(timelineRepository).add(secondFollower, tweetId, occurredAt.toEpochMilli());
     }
+
+    @Test
+    void fetchFeed_forwardsOffsetAndBoundsLimit() {
+        UUID userId = UUID.randomUUID();
+        when(timelineRepository.fetch(userId, 4, 100)).thenReturn(List.of());
+        TimelineService service = new TimelineServiceImpl(timelineRepository, followRepository, tweetRepository, 20);
+
+        service.fetchFeed(userId, 4, 200);
+
+        verify(timelineRepository).fetch(userId, 4, 100);
+    }
 }

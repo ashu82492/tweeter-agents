@@ -27,8 +27,10 @@ public class TimelineServiceImpl implements TimelineService {
     }
 
     @Override
-    public List<UUID> fetchFeed(UUID userId, int limit) {
-        return timelineRepository.fetch(userId, Math.min(Math.max(limit, 1), 100));
+    public List<UUID> fetchFeed(UUID userId, int offset, int limit) {
+        int boundedOffset = Math.max(offset, 0);
+        int boundedLimit = Math.min(Math.max(limit, 1), 100);
+        return timelineRepository.fetch(userId, boundedOffset, boundedLimit);
     }
 
     @Override
