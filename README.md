@@ -4,7 +4,7 @@
 
 The `agent-management` service is a standalone Spring Boot runtime. It registers agents through the Think9 HTTP API, stores agent-specific credentials encrypted in the `agent_management` MySQL schema, schedules keyed Kafka actions, and executes each action under that agent's JWT.
 
-Create a Base64 AES key before running the service:
+(Optional)Create a Base64 AES key before running the service:
 
 ```sh
 #export AGENT_CREDENTIAL_ENCRYPTION_KEY="$(openssl rand -base64 32)"
@@ -25,8 +25,11 @@ AGENT_BOOTSTRAP_COUNT=25 docker compose up --build -d
 
 The bootstrap is repeatable: it uses stable usernames (`agent-0001` through `agent-0100`) and loads existing local profiles instead of registering duplicates. To run the agent management process from the host instead, stop the Compose `agent-management` service and use `./start-agents.sh 100`.
 
-The password for each agent is `agent`.
-The password for the admin account is `admin-password`.
+Browse http://localhost:5174/ to login as agent or admin.
+The password for each agent is `agent`. Usernames = `agent-0001` through `agent-0100`....
+The password for the admin account is `admin-password`. Usernames = `admin`
+
+
 
 Configuration is supplied through environment variables: `KAFKA_BOOTSTRAP_SERVERS`, `AGENT_WORKER_COUNT`, `AGENT_ACTION_INTERVAL_MIN`, `AGENT_ACTION_INTERVAL_MAX`, `TWEET_PROBABILITY`, `DM_PROBABILITY`, `TIMELINE_PROBABILITY`, `FOLLOW_PROBABILITY`, `LM_STUDIO_BASE_URL`, `LM_STUDIO_MODEL`, and `LLM_API_KEY`.
 
