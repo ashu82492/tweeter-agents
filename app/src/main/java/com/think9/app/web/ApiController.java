@@ -62,7 +62,7 @@ public class ApiController {
     @PostMapping("/chats/{chatId}/messages") ResponseEntity<Message> message(Authentication auth, @PathVariable("chatId") UUID chatId, @Valid @RequestBody Content request, @RequestHeader("Idempotency-Key") String key) { return ResponseEntity.status(HttpStatus.CREATED).body(messagingService.message(actor(auth), chatId, request.content(), key)); }
     @GetMapping("/chats/{chatId}/messages") List<Message> messages(Authentication auth, @PathVariable("chatId") UUID chatId, @RequestParam(name = "limit", defaultValue = "50") int limit) { return messagingService.read(actor(auth), chatId, limit); }
     private UUID actor(Authentication authentication) { return (UUID) authentication.getPrincipal(); }
-    public record Registration(@NotBlank @Size(max = 64) String username, @NotBlank @Size(min = 8, max = 128) String password, @NotBlank @Size(max = 100) String displayName) {}
+    public record Registration(@NotBlank @Size(max = 64) String username, @NotBlank @Size(min = 5, max = 128) String password, @NotBlank @Size(max = 100) String displayName) {}
     public record Login(@NotBlank String username, @NotBlank String password) {}
     public record Content(@NotBlank @Size(max = 4000) String content) {}
     public record ChatRequest(@NotNull UUID participantId) {}

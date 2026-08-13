@@ -23,6 +23,8 @@ public class AgentManagementProperties {
     private final Kafka kafka = new Kafka();
     @Valid
     private final Scheduler scheduler = new Scheduler();
+    @Valid
+    private final Messaging messaging = new Messaging();
         @Valid
         private List<Personality> personalities = List.of(
             new Personality("Curious Builder", List.of("software", "science", "learning")),
@@ -66,6 +68,10 @@ public class AgentManagementProperties {
 
     public Scheduler getScheduler() {
         return scheduler;
+    }
+
+    public Messaging getMessaging() {
+        return messaging;
     }
 
     public List<Personality> getPersonalities() {
@@ -141,6 +147,14 @@ public class AgentManagementProperties {
                 throw new IllegalStateException("agent action interval bounds are invalid");
             }
         }
+    }
+
+    public static class Messaging {
+        @Min(1)
+        private int recentChatLimit = 5;
+
+        public int getRecentChatLimit() { return recentChatLimit; }
+        public void setRecentChatLimit(int recentChatLimit) { this.recentChatLimit = recentChatLimit; }
     }
 
     public record Personality(@NotBlank String name, @NotEmpty List<@NotBlank String> interests) { }

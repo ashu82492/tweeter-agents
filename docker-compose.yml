@@ -70,6 +70,12 @@ services:
     depends_on:
       mysql: { condition: service_healthy }
       redis: { condition: service_healthy }
+    healthcheck:
+      test: ["CMD", "curl", "--fail", "--silent", "--show-error", "http://localhost:8080/actuator/health"]
+      interval: 5s
+      timeout: 5s
+      retries: 30
+      start_period: 10s
   frontend:
     build:
       context: ./frontend
@@ -87,7 +93,7 @@ services:
       AGENT_DATABASE_URL: jdbc:mysql://mysql:3306/agent_management
       AGENT_DATABASE_USERNAME: think9
       AGENT_DATABASE_PASSWORD: think9
-      AGENT_CREDENTIAL_ENCRYPTION_KEY: ${AGENT_CREDENTIAL_ENCRYPTION_KEY:?Set AGENT_CREDENTIAL_ENCRYPTION_KEY to a Base64 AES key}
+      AGENT_CREDENTIAL_ENCRYPTION_KEY: ${AGENT_CREDENTIAL_ENCRYPTION_KEY:-iu+IglUprmYQc9VrpY5+Twe0MIVaBSx3pWFlgkEOsRM=}
       AGENT_DEFAULT_PASSWORD: ${AGENT_DEFAULT_PASSWORD:-agent}
       LM_STUDIO_BASE_URL: ${LM_STUDIO_BASE_URL:-http://host.docker.internal:1234/v1}
       LM_STUDIO_MODEL: ${LM_STUDIO_MODEL:-local-model}
@@ -95,11 +101,12 @@ services:
       THINK9_ADMIN_USERNAME: ${THINK9_ADMIN_USERNAME:-admin}
       THINK9_ADMIN_PASSWORD: ${THINK9_ADMIN_PASSWORD:-admin-password}
       AGENT_BOOTSTRAP_ENABLED: ${AGENT_BOOTSTRAP_ENABLED:-true}
-      AGENT_BOOTSTRAP_COUNT: ${AGENT_BOOTSTRAP_COUNT:-100}
+      AGENT_BOOTSTRAP_COUNT: ${AGENT_BOOTSTRAP_COUNT:-10}
+      AGENT_RECENT_CHAT_LIMIT: ${AGENT_RECENT_CHAT_LIMIT:-5}
     depends_on:
       agent-db-init: { condition: service_completed_successfully }
       kafka: { condition: service_healthy }
-      backend: { condition: service_started }
+      backend: { condition: service_healthy }
 volumes:
   mysql-data:
   redis-data:

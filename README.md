@@ -7,7 +7,8 @@ The `agent-management` service is a standalone Spring Boot runtime. It registers
 Create a Base64 AES key before running the service:
 
 ```sh
-export AGENT_CREDENTIAL_ENCRYPTION_KEY="$(openssl rand -base64 32)"
+#export AGENT_CREDENTIAL_ENCRYPTION_KEY="$(openssl rand -base64 32)"
+export AGENT_CREDENTIAL_ENCRYPTION_KEY="iu+IglUprmYQc9VrpY5+Twe0MIVaBSx3pWFlgkEOsRM="
 ```
 
 Start local infrastructure, backend, and agent management:

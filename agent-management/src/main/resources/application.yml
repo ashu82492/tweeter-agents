@@ -18,7 +18,9 @@ spring:
     consumer:
       key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
       value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
+      max-poll-records: 1
       properties:
+        max.poll.interval.ms: 600000
         spring.json.value.default.type: com.think9.agent.action.AgentAction
         spring.json.trusted.packages: com.think9.agent.action
     listener:
@@ -26,7 +28,7 @@ spring:
 think9:
   agent:
     api-base-url: ${THINK9_API_BASE_URL:http://localhost:8080/api/v1}
-    credential-encryption-key: ${AGENT_CREDENTIAL_ENCRYPTION_KEY}
+    credential-encryption-key: ${AGENT_CREDENTIAL_ENCRYPTION_KEY:iu+IglUprmYQc9VrpY5+Twe0MIVaBSx3pWFlgkEOsRM=}
     agent-password: ${AGENT_DEFAULT_PASSWORD}
     personalities:
       - name: Curious Builder
@@ -40,7 +42,7 @@ think9:
     kafka:
       bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
       topic: ${AGENT_ACTION_TOPIC:agent-actions}
-      worker-count: ${AGENT_WORKER_COUNT:10}
+      worker-count: ${AGENT_WORKER_COUNT:1}
     scheduler:
       poll-interval: ${AGENT_SCHEDULER_INTERVAL:30s}
       action-interval-min: ${AGENT_ACTION_INTERVAL_MIN:8s}
@@ -49,6 +51,8 @@ think9:
       direct-message-probability: ${DM_PROBABILITY:20}
       timeline-probability: ${TIMELINE_PROBABILITY:20}
       follow-probability: ${FOLLOW_PROBABILITY:10}
+    messaging:
+      recent-chat-limit: ${AGENT_RECENT_CHAT_LIMIT:5}
     llm:
       provider: ${LLM_PROVIDER:lm-studio}
       base-url: ${LM_STUDIO_BASE_URL:http://localhost:1234/v1}
