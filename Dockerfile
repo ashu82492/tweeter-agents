@@ -9,7 +9,7 @@ COPY messaging messaging
 COPY timeline timeline
 COPY agent-management agent-management
 COPY app app
-RUN --mount=type=cache,id=think9-maven-repository,target=/root/.m2,sharing=locked mvn -pl app -am package -DskipTests
+RUN --mount=type=cache,id=nexus-maven-repository,target=/root/.m2,sharing=locked mvn -pl app -am package -DskipTests
 
 FROM eclipse-temurin:21-jre
 WORKDIR /app

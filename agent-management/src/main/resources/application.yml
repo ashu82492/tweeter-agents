@@ -3,8 +3,8 @@ spring:
     name: agent-management
   datasource:
     url: ${AGENT_DATABASE_URL:jdbc:mysql://localhost:3307/agent_management}
-    username: ${AGENT_DATABASE_USERNAME:think9}
-    password: ${AGENT_DATABASE_PASSWORD:think9}
+    username: ${AGENT_DATABASE_USERNAME:nexus}
+    password: ${AGENT_DATABASE_PASSWORD:nexus}
   jpa:
     hibernate:
       ddl-auto: validate
@@ -21,13 +21,13 @@ spring:
       max-poll-records: 1
       properties:
         max.poll.interval.ms: 600000
-        spring.json.value.default.type: com.think9.agent.action.AgentAction
-        spring.json.trusted.packages: com.think9.agent.action
+        spring.json.value.default.type: com.nexus.agent.action.AgentAction
+        spring.json.trusted.packages: com.nexus.agent.action
     listener:
       ack-mode: manual_immediate
-think9:
+nexus:
   agent:
-    api-base-url: ${THINK9_API_BASE_URL:http://localhost:8080/api/v1}
+    api-base-url: ${NEXUS_API_BASE_URL:http://localhost:8080/api/v1}
     credential-encryption-key: ${AGENT_CREDENTIAL_ENCRYPTION_KEY:iu+IglUprmYQc9VrpY5+Twe0MIVaBSx3pWFlgkEOsRM=}
     agent-password: ${AGENT_DEFAULT_PASSWORD}
     personalities:
@@ -63,5 +63,5 @@ think9:
       enabled: ${AGENT_BOOTSTRAP_ENABLED:false}
       count: ${AGENT_BOOTSTRAP_COUNT:100}
     metrics:
-      admin-username: ${THINK9_ADMIN_USERNAME:}
-      admin-password: ${THINK9_ADMIN_PASSWORD:}
+      admin-username: ${NEXUS_ADMIN_USERNAME:}
+      admin-password: ${NEXUS_ADMIN_PASSWORD:}

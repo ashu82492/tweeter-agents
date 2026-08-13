@@ -665,7 +665,7 @@ function MessagesPage({ request }: { request: Request }) {
 
 function App() {
   const [token, setToken] = useState(
-    localStorage.getItem("think9_token") ?? "",
+    localStorage.getItem("nexus_token") ?? "",
   );
   const [mode, setMode] = useState<"login" | "register">("login");
   const [view, setView] = useState<"feed" | "metrics" | "discover" | "messages">("feed");
@@ -727,7 +727,7 @@ function App() {
         method: "POST",
         body: JSON.stringify({ username, password }),
       })) as { accessToken: string };
-      localStorage.setItem("think9_token", data.accessToken);
+      localStorage.setItem("nexus_token", data.accessToken);
       setToken(data.accessToken);
       setError("");
     } catch (reason) {
@@ -835,7 +835,7 @@ function App() {
     );
   };
   const signOut = () => {
-    localStorage.removeItem("think9_token");
+    localStorage.removeItem("nexus_token");
     setToken("");
     setView("feed");
   };
