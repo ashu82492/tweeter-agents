@@ -8,8 +8,10 @@ import {
   Gauge,
   Home,
   Mail,
+  MoreHorizontal,
   RefreshCw,
   Search,
+  Send,
   ShieldCheck,
   Sparkles,
   TriangleAlert,
@@ -17,6 +19,7 @@ import {
   Users,
 } from "lucide-react";
 import "./styles.css";
+import "./messages.css";
 
 const API = import.meta.env.VITE_API_URL ?? "http://localhost:8080/api/v1";
 const FEED_PAGE_SIZE = 20;
@@ -46,6 +49,8 @@ type Metrics = {
   health: string;
   points: MetricPoint[];
 };
+type Chat = { id: string; participantIds: string[]; createdAt: string };
+type Message = { id: string; chatId: string; senderId: string; content: string; createdAt: string };
 type Request = (path: string, options?: RequestInit) => Promise<unknown>;
 
 function relativeTime(createdAt: string) {
@@ -543,12 +548,127 @@ function DiscoverPeople({ request }: { request: Request }) {
   );
 }
 
+function MessagesPage({ request }: { request: Request }) {
+  const [users, setUsers] = useState<DiscoverUser[]>([]);
+  const [currentUserId, setCurrentUserId] = useState("");
+  const [selectedUser, setSelectedUser] = useState<DiscoverUser | null>(null);
+  const [messages, setMessages] = useState<Message[]>([]);
+  const [draft, setDraft] = useState("");
+  const [search, setSearch] = useState("");
+  const [loading, setLoading] = useState(true);
+  const [messagesLoading, setMessagesLoading] = useState(false);
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    const loadUsers = async () => {
+      try {
+        const [me, people] = await Promise.all([
+          request("/users/me") as Promise<DiscoverUser>,
+          request("/users?limit=100") as Promise<DiscoverUser[]>,
+        ]);
+        setCurrentUserId(me.id);
+        setUsers(people);
+        setSelectedUser(people[0] ?? null);
+      } catch (reason) {
+        setError(reason instanceof Error ? reason.message : "People could not be loaded");
+      } finally {
+        setLoading(false);
+      }
+    };
+    void loadUsers();
+  }, []);
+
+  useEffect(() => {
+    if (!selectedUser) {
+      setMessages([]);
+      return;
+    }
+    const loadMessages = async () => {
+      setMessagesLoading(true);
+      setError("");
+      try {
+        const chat = (await request("/chats", {
+          method: "POST",
+          body: JSON.stringify({ participantId: selectedUser.id }),
+        })) as Chat;
+        setMessages((await request(`/chats/${chat.id}/messages?limit=100`)) as Message[]);
+      } catch (reason) {
+        setError(reason instanceof Error ? reason.message : "Conversation could not be loaded");
+      } finally {
+        setMessagesLoading(false);
+      }
+    };
+    void loadMessages();
+  }, [selectedUser]);
+
+  const sendMessage = async (event: FormEvent) => {
+    event.preventDefault();
+    if (!selectedUser || !draft.trim()) return;
+    try {
+      const chat = (await request("/chats", {
+        method: "POST",
+        body: JSON.stringify({ participantId: selectedUser.id }),
+      })) as Chat;
+      const message = (await request(`/chats/${chat.id}/messages`, {
+        method: "POST",
+        headers: { "Idempotency-Key": crypto.randomUUID() },
+        body: JSON.stringify({ content: draft.trim() }),
+      })) as Message;
+      setMessages((current) => [...current, message]);
+      setDraft("");
+    } catch (reason) {
+      setError(reason instanceof Error ? reason.message : "Message could not be sent");
+    }
+  };
+
+  const visibleUsers = users.filter((user) =>
+    `${user.displayName} ${user.username}`.toLowerCase().includes(search.toLowerCase()),
+  );
+  return (
+    <main className="messages-page">
+      <section className="conversation-list">
+        <header className="messages-heading">
+          <h1>Messages</h1>
+          <button className="icon-button" type="button" title="Message options" aria-label="Message options"><MoreHorizontal /></button>
+        </header>
+        <label className="messages-search"><Search /><input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Search direct messages" /></label>
+        <div className="message-filters" aria-label="Message filters"><button className="active" type="button">All</button><button type="button">Unread</button><button type="button"><Sparkles /> Agents</button></div>
+        <div className="contact-list">
+          {loading ? <p className="empty">Loading conversations...</p> : visibleUsers.map((user) => (
+            <button className={`contact-row ${selectedUser?.id === user.id ? "active" : ""}`} key={user.id} type="button" onClick={() => setSelectedUser(user)}>
+              <span className={`contact-avatar ${user.type === "SYSTEM_AGENT" ? "agent-avatar" : ""}`}>{user.type === "SYSTEM_AGENT" ? <Sparkles /> : user.displayName.slice(0, 1).toUpperCase()}</span>
+              <span className="contact-copy"><strong>{user.displayName}</strong><small>@{user.username}</small></span><time>Now</time>
+            </button>
+          ))}
+          {!loading && visibleUsers.length === 0 && <p className="empty">No people found.</p>}
+        </div>
+      </section>
+      <section className="conversation-thread">
+        {selectedUser ? <>
+          <header className="thread-heading">
+            <span className={`contact-avatar ${selectedUser.type === "SYSTEM_AGENT" ? "agent-avatar" : ""}`}>{selectedUser.type === "SYSTEM_AGENT" ? <Sparkles /> : selectedUser.displayName.slice(0, 1).toUpperCase()}</span>
+            <div><h2>{selectedUser.displayName}</h2><p>@{selectedUser.username} · Online now</p></div>
+            <button className="icon-button" type="button" title="More actions" aria-label="More conversation actions"><MoreHorizontal /></button>
+          </header>
+          <div className="message-stream">
+            {messagesLoading ? <p className="empty">Loading messages...</p> : messages.length === 0 ? <div className="empty-thread"><Mail /><strong>Start a conversation</strong><span>Send a message to {selectedUser.displayName}.</span></div> : messages.map((message) => (
+              <div className={`message-bubble ${message.senderId === currentUserId ? "outgoing" : "incoming"}`} key={message.id}><p>{message.content}</p><time>{relativeTime(message.createdAt)}</time></div>
+            ))}
+          </div>
+          {error && <p className="error">{error}</p>}
+          <form className="message-composer" onSubmit={sendMessage}><input value={draft} onChange={(event) => setDraft(event.target.value)} placeholder="Write a message..." maxLength={4000} /><button className="send-button" type="submit" disabled={!draft.trim()} aria-label="Send message" title="Send message"><Send /></button></form>
+        </> : <div className="empty-thread"><Mail /><strong>Your messages</strong><span>Choose someone to start a conversation.</span></div>}
+      </section>
+    </main>
+  );
+}
+
 function App() {
   const [token, setToken] = useState(
     localStorage.getItem("think9_token") ?? "",
   );
   const [mode, setMode] = useState<"login" | "register">("login");
-  const [view, setView] = useState<"feed" | "metrics" | "discover">("feed");
+  const [view, setView] = useState<"feed" | "metrics" | "discover" | "messages">("feed");
   const [adminAvailable, setAdminAvailable] = useState(false);
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
@@ -775,7 +895,7 @@ function App() {
       </div>
     );
   return (
-    <div className={`shell ${view === "discover" ? "discover-shell" : ""}`}>
+    <div className={`shell ${view === "discover" ? "discover-shell" : ""} ${view === "messages" ? "messages-shell" : ""}`}>
       <aside>
         <img src="/logo.png" alt="Nexus" />
         <nav>
@@ -787,7 +907,11 @@ function App() {
             <Home />
             Home
           </button>
-          <button className="nav-link" type="button">
+          <button
+            className={`nav-link ${view === "messages" ? "selected" : ""}`}
+            type="button"
+            onClick={() => setView("messages")}
+          >
             <Mail />
             Messages
           </button>
@@ -814,6 +938,8 @@ function App() {
       </aside>
       {view === "discover" ? (
         <DiscoverPeople request={request} />
+      ) : view === "messages" ? (
+        <MessagesPage request={request} />
       ) : (
         <main className="feed">
           <header>

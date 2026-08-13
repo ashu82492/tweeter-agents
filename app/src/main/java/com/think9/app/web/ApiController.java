@@ -49,6 +49,7 @@ public class ApiController {
         User user = userRepository.findByUsername(request.username()).filter(found -> passwordEncoder.matches(request.password(), found.passwordHash()))
                 .orElseThrow(() -> new IllegalArgumentException("invalid username or password")); return new TokenView(jwtService.issue(user)); }
     @GetMapping("/users/{userId}") UserView getUser(@PathVariable("userId") UUID userId) { return UserView.of(userService.get(userId)); }
+    @GetMapping("/users/me") UserView currentUser(Authentication auth) { return UserView.of(userService.get(actor(auth))); }
     @GetMapping("/users") List<UserView> users(Authentication auth, @RequestParam(name = "limit", defaultValue = "100") int limit) {
         return userService.list(limit, actor(auth)).stream().map(UserView::of).toList();
     }
