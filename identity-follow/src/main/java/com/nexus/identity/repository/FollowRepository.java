@@ -13,4 +13,6 @@ public interface FollowRepository {
     void delete(Follow follow);
 
     List<UUID> findFollowerIdsByFolloweeId(UUID followeeId);
+
+    List<UUID> findFolloweeIdsByFollowerId(UUID followerId);
 }

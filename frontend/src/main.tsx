@@ -663,12 +663,118 @@ function MessagesPage({ request }: { request: Request }) {
   );
 }
 
+function NetworkPage({ request }: { request: Request }) {
+  const [tab, setTab] = useState<"followers" | "following">("followers");
+  const [people, setPeople] = useState<DiscoverUser[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+  const [workingId, setWorkingId] = useState("");
+
+  const loadPeople = async (selectedTab: typeof tab) => {
+    setLoading(true);
+    setError("");
+    try {
+      setPeople((await request(`/users/me/${selectedTab}`)) as DiscoverUser[]);
+    } catch (reason) {
+      setError(reason instanceof Error ? reason.message : "Network could not be loaded");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    void loadPeople(tab);
+  }, [tab]);
+
+  const unfollow = async (userId: string) => {
+    setWorkingId(userId);
+    try {
+      await request(`/users/${userId}/follow`, {
+        method: "DELETE",
+        headers: { "Idempotency-Key": crypto.randomUUID() },
+      });
+      setPeople((current) => current.filter((person) => person.id !== userId));
+    } catch (reason) {
+      setError(reason instanceof Error ? reason.message : "Could not update following");
+    } finally {
+      setWorkingId("");
+    }
+  };
+
+  return (
+    <main className="network-page">
+      <header className="network-header">
+        <div>
+          <span className="eyebrow">NEXUS NETWORK</span>
+          <h1>Your network</h1>
+          <p>Keep track of the people and agents connected to you.</p>
+        </div>
+        <Users />
+      </header>
+      <div className="network-tabs" role="tablist" aria-label="Network views">
+        <button
+          className={tab === "followers" ? "active" : ""}
+          type="button"
+          role="tab"
+          aria-selected={tab === "followers"}
+          onClick={() => setTab("followers")}
+        >
+          Followers
+        </button>
+        <button
+          className={tab === "following" ? "active" : ""}
+          type="button"
+          role="tab"
+          aria-selected={tab === "following"}
+          onClick={() => setTab("following")}
+        >
+          Following
+        </button>
+      </div>
+      {error && <p className="error network-message">{error}</p>}
+      {loading ? (
+        <p className="network-empty">Loading your {tab}...</p>
+      ) : people.length === 0 ? (
+        <div className="network-empty-state">
+          <Users />
+          <strong>No {tab} yet</strong>
+          <span>{tab === "followers" ? "When people follow you, they will appear here." : "People and agents you follow will appear here."}</span>
+        </div>
+      ) : (
+        <section className="network-list" aria-label={tab}>
+          {people.map((person) => (
+            <article className="network-person" key={person.id}>
+              <div className={`person-avatar ${person.type === "SYSTEM_AGENT" ? "agent-avatar" : ""}`}>
+                {person.type === "SYSTEM_AGENT" ? <Sparkles /> : person.displayName.slice(0, 1).toUpperCase()}
+              </div>
+              <div className="person-details">
+                <h2>{person.displayName}{person.type === "SYSTEM_AGENT" && <span className="verified">✦</span>}</h2>
+                <p className="person-handle">@{person.username}</p>
+              </div>
+              {tab === "following" && (
+                <button
+                  className="follow-button following"
+                  type="button"
+                  disabled={workingId === person.id}
+                  onClick={() => void unfollow(person.id)}
+                >
+                  <Check /> Following
+                </button>
+              )}
+            </article>
+          ))}
+        </section>
+      )}
+    </main>
+  );
+}
+
 function App() {
   const [token, setToken] = useState(
     localStorage.getItem("nexus_token") ?? "",
   );
   const [mode, setMode] = useState<"login" | "register">("login");
-  const [view, setView] = useState<"feed" | "metrics" | "discover" | "messages">("feed");
+  const [view, setView] = useState<"feed" | "metrics" | "discover" | "messages" | "network">("feed");
   const [adminAvailable, setAdminAvailable] = useState(false);
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
@@ -895,7 +1001,7 @@ function App() {
       </div>
     );
   return (
-    <div className={`shell ${view === "discover" ? "discover-shell" : ""} ${view === "messages" ? "messages-shell" : ""}`}>
+    <div className={`shell ${view === "discover" ? "discover-shell" : ""} ${view === "messages" ? "messages-shell" : ""} ${view === "network" ? "network-shell" : ""}`}>
       <aside>
         <img src="/logo.png" alt="Nexus" />
         <nav>
@@ -916,12 +1022,20 @@ function App() {
             Messages
           </button>
           <button
+            className={`nav-link ${view === "network" ? "selected" : ""}`}
+            type="button"
+            onClick={() => setView("network")}
+          >
+            <Users />
+            Network
+          </button>
+          <button
             className={`nav-link ${view === "discover" ? "selected" : ""}`}
             type="button"
             onClick={() => setView("discover")}
           >
-            <Users />
-            Users
+            <UserPlus />
+            Discover
           </button>
           {adminAvailable && (
             <button
@@ -936,7 +1050,9 @@ function App() {
         </nav>
         <button onClick={signOut}>Sign out</button>
       </aside>
-      {view === "discover" ? (
+      {view === "network" ? (
+        <NetworkPage request={request} />
+      ) : view === "discover" ? (
         <DiscoverPeople request={request} />
       ) : view === "messages" ? (
         <MessagesPage request={request} />

@@ -1,3 +1,7 @@
+CREATE DATABASE IF NOT EXISTS nexus;
 CREATE DATABASE IF NOT EXISTS agent_management;
+CREATE USER IF NOT EXISTS 'nexus'@'%' IDENTIFIED BY 'nexus';
+ALTER USER 'nexus'@'%' IDENTIFIED BY 'nexus';
+GRANT ALL PRIVILEGES ON nexus.* TO 'nexus'@'%';
 GRANT ALL PRIVILEGES ON agent_management.* TO 'nexus'@'%';
 FLUSH PRIVILEGES;

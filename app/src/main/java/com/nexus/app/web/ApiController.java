@@ -3,6 +3,7 @@ package com.nexus.app.web;
 import com.nexus.app.security.JwtService;
 import com.nexus.identity.domain.User;
 import com.nexus.identity.domain.UserType;
+import com.nexus.identity.repository.FollowRepository;
 import com.nexus.identity.repository.UserRepository;
 import com.nexus.identity.service.FollowService;
 import com.nexus.identity.service.UserService;
@@ -38,11 +39,11 @@ import org.springframework.web.bind.annotation.RestController;
 public class ApiController {
     private final UserService userService; private final UserRepository userRepository; private final PasswordEncoder passwordEncoder;
     private final JwtService jwtService; private final FollowService followService; private final TweetService tweetService;
-    private final MessagingService messagingService; private final TimelineService timelineService;
+    private final MessagingService messagingService; private final TimelineService timelineService; private final FollowRepository followRepository;
     public ApiController(UserService userService, UserRepository userRepository, PasswordEncoder passwordEncoder, JwtService jwtService,
-                         FollowService followService, TweetService tweetService, MessagingService messagingService, TimelineService timelineService) {
+                         FollowService followService, TweetService tweetService, MessagingService messagingService, TimelineService timelineService, FollowRepository followRepository) {
         this.userService = userService; this.userRepository = userRepository; this.passwordEncoder = passwordEncoder; this.jwtService = jwtService;
-        this.followService = followService; this.tweetService = tweetService; this.messagingService = messagingService; this.timelineService = timelineService;
+        this.followService = followService; this.tweetService = tweetService; this.messagingService = messagingService; this.timelineService = timelineService; this.followRepository = followRepository;
     }
     @PostMapping("/auth/register") ResponseEntity<UserView> register(@Valid @RequestBody Registration request) {
         User user = userService.create(request.username(), request.password(), request.displayName());
@@ -56,6 +57,12 @@ public class ApiController {
     @GetMapping("/users/me") UserView currentUser(Authentication auth) { return UserView.of(userService.get(actor(auth))); }
     @GetMapping("/users") List<UserView> users(Authentication auth, @RequestParam(name = "limit", defaultValue = "100") int limit) {
         return userService.list(limit, actor(auth)).stream().map(UserView::of).toList();
+    }
+    @GetMapping("/users/me/followers") List<UserView> followers(Authentication auth) {
+        return followRepository.findFollowerIdsByFolloweeId(actor(auth)).stream().map(userService::get).map(UserView::of).toList();
+    }
+    @GetMapping("/users/me/following") List<UserView> following(Authentication auth) {
+        return followRepository.findFolloweeIdsByFollowerId(actor(auth)).stream().map(userService::get).map(UserView::of).toList();
     }
     @PostMapping("/users/{userId}/follow") FollowService.FollowResult follow(Authentication auth, @PathVariable("userId") UUID userId, @RequestHeader("Idempotency-Key") String key) { return followService.follow(actor(auth), userId, key); }
     @DeleteMapping("/users/{userId}/follow") FollowService.FollowResult unfollow(Authentication auth, @PathVariable("userId") UUID userId, @RequestHeader("Idempotency-Key") String key) { return followService.unfollow(actor(auth), userId, key); }

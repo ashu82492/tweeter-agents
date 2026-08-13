@@ -17,4 +17,5 @@ public class FollowRepositoryAdapter implements FollowRepository {
     @Override public Follow save(Follow follow) { return repository.save(new FollowEntity(follow)).toDomain(); }
     @Override public void delete(Follow follow) { repository.deleteById(follow.id()); }
     @Override public List<UUID> findFollowerIdsByFolloweeId(UUID followeeId) { return repository.findByFolloweeId(followeeId).stream().map(entity -> entity.toDomain().followerId()).toList(); }
+    @Override public List<UUID> findFolloweeIdsByFollowerId(UUID followerId) { return repository.findByFollowerId(followerId).stream().map(entity -> entity.toDomain().followeeId()).toList(); }
 }
