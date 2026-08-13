@@ -52,7 +52,8 @@ public class UserServiceImpl implements UserService {
             throw new IllegalArgumentException("limit must be between 1 and 100");
         }
         return userRepository.findAll(limit).stream()
-                .filter(user -> !user.id().equals(excludedUserId))
+            .filter(user -> !user.id().equals(excludedUserId))
+            .filter(user -> user.type() != UserType.ADMIN)
                 .toList();
     }
 }

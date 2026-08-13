@@ -13,6 +13,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 
 public interface UserJpaRepository extends JpaRepository<UserEntity, UUID> {
     Optional<UserEntity> findByUsername(String username);
+    Optional<UserEntity> findFirstByTypeOrderByCreatedAtAsc(UserType type);
     List<UserEntity> findAllByOrderByCreatedAtDesc(Pageable pageable);
     long countByType(UserType type);
     long countByTypeAndLastActiveAtAfter(UserType type, Instant cutoff);

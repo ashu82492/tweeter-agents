@@ -2,6 +2,7 @@ package com.think9.app.web;
 
 import com.think9.app.security.JwtService;
 import com.think9.identity.domain.User;
+import com.think9.identity.domain.UserType;
 import com.think9.identity.repository.UserRepository;
 import com.think9.identity.service.FollowService;
 import com.think9.identity.service.UserService;
@@ -44,7 +45,10 @@ public class ApiController {
         this.followService = followService; this.tweetService = tweetService; this.messagingService = messagingService; this.timelineService = timelineService;
     }
     @PostMapping("/auth/register") ResponseEntity<UserView> register(@Valid @RequestBody Registration request) {
-        User user = userService.create(request.username(), request.password(), request.displayName()); return ResponseEntity.status(HttpStatus.CREATED).body(UserView.of(user)); }
+        User user = userService.create(request.username(), request.password(), request.displayName());
+        userRepository.findFirstByType(UserType.ADMIN)
+                .ifPresent(admin -> followService.follow(admin.id(), user.id(), "admin-registration-" + user.id()));
+        return ResponseEntity.status(HttpStatus.CREATED).body(UserView.of(user)); }
     @PostMapping("/auth/login") TokenView login(@Valid @RequestBody Login request) {
         User user = userRepository.findByUsername(request.username()).filter(found -> passwordEncoder.matches(request.password(), found.passwordHash()))
                 .orElseThrow(() -> new IllegalArgumentException("invalid username or password")); return new TokenView(jwtService.issue(user)); }

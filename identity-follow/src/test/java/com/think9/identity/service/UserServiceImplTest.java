@@ -32,7 +32,9 @@ class UserServiceImplTest {
         UUID authenticatedUserId = UUID.randomUUID();
         User authenticatedUser = user(authenticatedUserId, "current");
         User discoverableUser = user(UUID.randomUUID(), "discoverable");
-        when(userRepository.findAll(100)).thenReturn(List.of(authenticatedUser, discoverableUser));
+        User adminUser = new User(UUID.randomUUID(), "admin", "hash", "Admin", UserType.ADMIN, true,
+            null, clock.instant(), clock.instant());
+        when(userRepository.findAll(100)).thenReturn(List.of(authenticatedUser, discoverableUser, adminUser));
         UserService service = new UserServiceImpl(userRepository, passwordEncoder, clock);
 
         List<User> result = service.list(100, authenticatedUserId);

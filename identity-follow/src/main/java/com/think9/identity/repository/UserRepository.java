@@ -14,6 +14,8 @@ public interface UserRepository {
 
     Optional<User> findByUsername(String username);
 
+    Optional<User> findFirstByType(UserType type);
+
     List<User> findAll(int limit);
 
     long countByType(UserType type);
